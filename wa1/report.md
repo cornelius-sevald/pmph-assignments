@@ -1,19 +1,3 @@
----
-title-meta: PMPH Assignment 1
-author-meta: Cornelius Sevald-Krause
-date-meta: 2022-09-15
-lang: en-GB
-header-includes: |
-  <style>
-    table {border-collapse: collapse;}
-    table, th, td {border: 1px solid black;}
-    td {vertical-align: top;}
-  </style>
----
-
-\newcommand\catenate{\mathbin{\text{\ttfamily\upshape ++}}}
-\newcommand\mappend{\mathbin{\text{\ttfamily\upshape o}}}
-
 PMPH Assignment 1
 ===============
 
@@ -25,31 +9,21 @@ Task 1
 
 ### Part a)
 
-Let $a, b, c \in Img(h)$ such that $h\ x = a$, $h\ y = b$ and $h\ z = c$
-where $x, y, z \in \mathcal{A}$,
-the domain of $h\ : \mathcal{A} \rightarrow \mathcal{B}$.
+Let `a, b, c` be elements of `Img(h)` such that `h x = a`, `h y = b` and
+`h z = c` where `x, y, z` are elements of the domain of `h`.
 
-To prove that '$\mappend$' is associative we write the expression
-$(a \mappend b) \mappend c$ as
-$(h\ x \mappend h\ y) \mappend h\ z$.
-Using the third definition of $h$ we re-write it
-$h\ (x \catenate y) \mappend h\ z =
- h\ (x \catenate y) \catenate z$.
+To prove that '`o`' is associative we write the expression `(a o b) o c` as
+`(h x o h y) o h z`. Using the third definition of `h` we re-write it
+`h (x ++ y) o h z = h (x ++ y) ++ z`.
 As list concatenation is associative, we can further re-write:
-$h\ (x \catenate y) \catenate z     =
- h\ x \catenate (y \catenate z)     =
- h\ x \mappend h\ y \catenate z     =
- h\ x \mappend (h\ y \mappend h\ z) =
- a    \mappend (b    \mappend c)$.
+```
+h (x ++ y) ++ z   =
+h x ++ (y ++ z)   =
+h x o h y ++ z    =
+h x o (h y o h z) =
+a o (b o c)
+```
 
-To prove that $e$ is the neutral element we use the first and third definitions
-of $h$ to write $b \mappend e$ as
-$h\ y \mappend h\ [] =
- h\ y  \catenate []  =
- h\ y                =
- b$.
-It is also easy to see that
-$b \mappend e      =
- h\ y \catenate [] =
- h\ [] \catenate y =
- e \mappend b$.
+To prove that `e` is the neutral element we use the first and third definitions
+of `h` to write `b o e` as `h y o h [] = h y ++ [] = h y = b`.
+It is also easy to see that `b o e = h y ++ [] = h [] ++ y = e o b`.
