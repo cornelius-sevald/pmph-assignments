@@ -25,31 +25,31 @@ Task 1
 
 ### Part a)
 
-Let $a, b, c \in Img(h)$ such that $h(x) = a$, $h(y) = b$ and $h(z) = c$
+Let $a, b, c \in Img(h)$ such that $h\ x = a$, $h\ y = b$ and $h\ z = c$
 where $x, y, z \in \mathcal{A}$,
-the domain of $h : \mathcal{A} \rightarrow \mathcal{B}$.
+the domain of $h\ : \mathcal{A} \rightarrow \mathcal{B}$.
 
 To prove that '$\mappend$' is associative we write the expression
 $(a \mappend b) \mappend c$ as
-$(h(x) \mappend h(y)) \mappend h(z)$.
+$(h\ x \mappend h\ y) \mappend h\ z$.
 Using the third definition of $h$ we re-write it
-$h((x \catenate y)) \mappend h(z) =
- h((x \catenate y) \catenate z)$.
+$h\ (x \catenate y) \mappend h\ z =
+ h\ (x \catenate y) \catenate z$.
 As list concatenation is associative, we can further re-write:
-$h((x \catenate y) \catenate z)     =
- h(x \catenate (y \catenate z))     =
- h(x) \mappend h(y \catenate z)     =
- h(x) \mappend (h(y) \mappend h(z)) =
+$h\ (x \catenate y) \catenate z     =
+ h\ x \catenate (y \catenate z)     =
+ h\ x \mappend h\ y \catenate z     =
+ h\ x \mappend (h\ y \mappend h\ z) =
  a    \mappend (b    \mappend c)$.
 
 To prove that $e$ is the neutral element we use the first and third definitions
 of $h$ to write $b \mappend e$ as
-$h(y) \mappend h([]) =
- h(y  \catenate [])  =
- h(y)                =
+$h\ y \mappend h\ [] =
+ h\ y  \catenate []  =
+ h\ y                =
  b$.
 It is also easy to see that
 $b \mappend e      =
- h(y \catenate []) =
- h([] \catenate y) =
+ h\ y \catenate [] =
+ h\ [] \catenate y =
  e \mappend b$.
