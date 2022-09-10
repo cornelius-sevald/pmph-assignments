@@ -17,13 +17,24 @@ To prove that '`o`' is associative we write the expression `(a o b) o c` as
 `h (x ++ y) o h z = h (x ++ y) ++ z`.
 As list concatenation is associative, we can further re-write:
 ```
-h (x ++ y) ++ z   =
-h x ++ (y ++ z)   =
-h x o h y ++ z    =
-h x o (h y o h z) =
+h (x ++ y) ++ z     =
+h x ++ (y ++ z)     =
+h x o h y ++ z      =
+h x o (h y o h z)   =
 a o (b o c)
 ```
 
 To prove that `e` is the neutral element we use the first and third definitions
 of `h` to write `b o e` as `h y o h [] = h y ++ [] = h y = b`.
 It is also easy to see that `b o e = h y ++ [] = h [] ++ y = e o b`.
+
+### Part b)
+
+As `reduce (++) [] . distr_p` is the identity function we can write
+`reduce (+) 0 . map f` as `reduce (+) 0 . map f . reduce (++) [] . distr_p`.
+Using the second, third and first lemma (in that order) we get:
+```
+reduce (+) 0 . reduce (++) [] . map (map f) . distr_p       =
+reduce (+) 0 . map (reduce (+) 0) . map (map f) . distr_p   =
+reduce (+) 0 . map ( (reduce (+) 0) . (map f) ) . distr_p   =
+```
