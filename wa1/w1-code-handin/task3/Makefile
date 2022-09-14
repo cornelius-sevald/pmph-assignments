@@ -1,5 +1,5 @@
 CC=nvcc
-CFLAGS=-O3 -arch=compute_35 -I/opt/cuda/include -I/usr/local/cuda/include -Wno-deprecated-gpu-targets -Wno-deprecated-declarations
+CFLAGS=-O0 -arch=compute_35 -I/opt/cuda/include -I/usr/local/cuda/include -Wno-deprecated-gpu-targets -Wno-deprecated-declarations
 LDFLAGS=-L/opt/cuda/lib64 -L/usr/local/cuda/lib64
 
 all: wa1-task3
