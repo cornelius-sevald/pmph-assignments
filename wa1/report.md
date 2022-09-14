@@ -128,3 +128,83 @@ The reported speed **with** acceleration is:
 ```
 
 giving a speedup of approx. `8.31`, `8.29` and `6.19` respectively.
+
+Task 3
+------
+
+The CUDA program validates and an epsilon of `1e-5`.
+The sweet-point seems to be around `N=400` (on gpu02).
+A table of input sizes and speedups are given below.
+
+| N    | SPDUP |
+|------|-------|
+| 2^9  |     1 |
+| 2^10 |     2 |
+| 2^11 |     7 |
+| 2^12 |    11 |
+| 2^13 |    22 |
+| 2^14 |    43 |
+| 2^15 |    62 |
+| 2^16 |    77 |
+| 2^17 |    98 |
+| 2^18 |   104 |
+| 2^19 |   110 |
+| 2^20 |   117 |
+| 2^21 |   119 |
+| 2^22 |   117 |
+| 2^23 |   122 |
+
+There are drastic increases in speedups between N=2^13 and N=2^17.
+The maximum speedup seems to be a little above 120 which is reached at N=2^23.
+
+The code of the CUDA kernel is given below:
+```c
+__global__ void parallel_map(float *d_in, float *d_out, unsigned int N) {
+    const unsigned int lid = threadIdx.x;
+    const unsigned int gid = blockIdx.x*blockDim.x + lid;
+    if (gid < N) {
+        float x = d_in[gid];
+        float y = (x/(x-2.3))*(x/(x-2.3))*(x/(x-2.3)); // (x/(x-2.3))^3
+        d_out[gid] = y;
+    }
+}
+```
+The local thread ID is fetched and used with the block ID to calculate the
+global ID. If the global ID exceeds the input array size the thread is skipped.
+Otherwise it preforms the calculation and stores it in the output
+according to its global ID.
+
+The code calling the kernel is given below:
+```c
+// copy host memory to device
+cudaMemcpy(d_in, h_in, mem_size, cudaMemcpyHostToDevice);
+
+// preform parallel map
+gettimeofday(&t_start, NULL);
+for (int i = 0; i < GPU_RUNS; i++) {
+    parallel_map<<<num_blocks, block_size>>>(d_in, d_out, N);
+} cudaThreadSynchronize();
+gettimeofday(&t_end, NULL);
+timeval_subtract(&t_diff, &t_end, &t_start);
+gpu_elapsed = (t_diff.tv_sec*1e6 + t_diff.tv_usec) / GPU_RUNS;
+
+// copy host memory to device
+cudaMemcpy(h_out_p, d_out, mem_size, cudaMemcpyDeviceToHost);
+```
+First the input is copied to the device, then the start time is recorded
+before calling the kerne `GPU_RUNS` times.
+After the loop the threads are synchronized and the end time is recorded.
+From the start and end time the elapsed time is calculated and the result
+is copied from the device memory to the host.
+
+The code that computes the grid and block sizes is given below:
+```c
+unsigned int block_size = 256;
+unsigned int num_blocks = ((N + (block_size - 1)) / block_size);
+```
+
+The block size is chosen to be 256 as that's what was used in an example in
+the CUDA documentation. From that, the number of blocks is calculated.
+As integer division rounds down we need to add `(block_size - 1)` to `N` before
+dividing to make sure that there are enough blocks in cases where `block_size`
+does not divide `N` evenly.
