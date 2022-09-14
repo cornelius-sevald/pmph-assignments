@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <assert.h>
+#include <sys/time.h>
+#include <time.h>
 
 void serial_map(float *in, float *out, unsigned int N) {
     for (unsigned int i = 0; i < N; ++i) {
@@ -32,7 +34,26 @@ bool check_equal(float *arr1, float *arr2, unsigned int N) {
     return are_equal;
 }
 
+int timeval_subtract(
+        struct timeval *result,
+        struct timeval *t2,
+        struct timeval *t1
+        ) {
+    unsigned int resolution = 1000000;
+    long int diff = (t2->tv_usec + resolution * t2->tv_sec) -
+                    (t1->tv_usec + resolution * t1->tv_sec);
+    result->tv_sec  = diff / resolution;
+    result->tv_usec = diff % resolution;
+    return diff < 0;
+}
+
+#define CPU_RUNS 100
+#define GPU_RUNS 100
+
 int main(int argc, char** argv) {
+    unsigned long int cpu_elapsed, gpu_elapsed;
+    struct timeval t_start, t_end, t_diff;
+
     // size of array
     // can be set by command line args but defaults to 753411
     unsigned int N = 753411;
@@ -54,20 +75,32 @@ int main(int argc, char** argv) {
         h_in[i] = (float) (i+1);
     }
 
+    // preform serial map and time it
+    gettimeofday(&t_start, NULL);
+    for (int i = 0; i < CPU_RUNS; i++) {
+        serial_map(h_in, h_out_s, N);
+    }
+    gettimeofday(&t_end, NULL);
+    timeval_subtract(&t_diff, &t_end, &t_start);
+    cpu_elapsed = (t_diff.tv_sec*1e6 + t_diff.tv_usec) / CPU_RUNS;
+
     // allocate device memory
     float *d_in;
     float *d_out;
     cudaMalloc((void **) &d_in,  mem_size);
     cudaMalloc((void **) &d_out, mem_size);
 
-    // preform serial map
-    serial_map(h_in, h_out_s, N);
-
     // copy host memory to device
     cudaMemcpy(d_in, h_in, mem_size, cudaMemcpyHostToDevice);
 
     // preform parallel map
-    parallel_map<<<num_blocks, block_size>>>(d_in, d_out, N);
+    gettimeofday(&t_start, NULL);
+    for (int i = 0; i < GPU_RUNS; i++) {
+        parallel_map<<<num_blocks, block_size>>>(d_in, d_out, N);
+    } cudaThreadSynchronize();
+    gettimeofday(&t_end, NULL);
+    timeval_subtract(&t_diff, &t_end, &t_start);
+    gpu_elapsed = (t_diff.tv_sec*1e6 + t_diff.tv_usec) / GPU_RUNS;
 
     // copy host memory to device
     cudaMemcpy(h_out_p, d_out, mem_size, cudaMemcpyDeviceToHost);
@@ -77,6 +110,9 @@ int main(int argc, char** argv) {
     } else {
         printf("INVALID\n");
     }
+
+    printf("CPU runtime %d (ms)\n", cpu_elapsed);
+    printf("GPU runtime %d (ms)\n", gpu_elapsed);
 
     // clean up
     free(h_in);
