@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
         assert(N != 0);
     }
     size_t mem_size = N*sizeof(float);
-    unsigned int block_size = 256;
+    unsigned int block_size = 1024;
     unsigned int num_blocks = ((N + (block_size - 1)) / block_size);
 
     // allocate host memory
