@@ -208,3 +208,50 @@ the CUDA documentation. From that, the number of blocks is calculated.
 As integer division rounds down we need to add `(block_size - 1)` to `N` before
 dividing to make sure that there are enough blocks in cases where `block_size`
 does not divide `N` evenly.
+
+Task 4
+======
+
+### Implementation
+
+The flat-parallel implemention is given below:
+```futhark
+let spMatVctMult [num_elms] [vct_len] [num_rows] 
+                 (mat_val : [num_elms](i64,f32))
+                 (mat_shp : [num_rows]i64)
+                 (vct : [vct_len]f32) : [num_rows]f32 =
+
+  let prds = map (\(i,x) -> x*vct[i]) mat_val
+  let flags  = mkFlagArray mat_shp mat_val
+  let indsp1 = scan (+) 0 mat_shp
+  let sc_arr = sgmSumF32 flags prds
+  in  map (\ip1 -> sc_arr[ip1-1]) indsp1
+```
+
+Line 6 (`let prds = ...`) uses the indices of `mat_val` to multiply the elements
+of the vector with the elements of the matrix.
+
+Line 7 uses the previously defined `mkFlagArray` function to create an array
+of booleans that can be used in a segmented scan.
+The `mkFlagArray` implementation is a slightly modified version of the function
+from p. 48 of the lecture notes.
+
+Line 8 uses a scan to get a list of indices. These indices are all 1 greater
+than they should be, hence the name "indices plus 1" -> `indsp1`.
+
+Line 9 uses the `sgmSumF32` function to preform a segmented sum on the products
+from line 6 and using the flag array from line 7. The final value of each
+segment is the value that is actually needed.
+
+Line 10 extracts those values from `sc_arr` using the indices plus one array.
+
+### Speedup
+
+To get the runtime of the sequential and flat-parallel programs the command
+`furhark dataset --i64-bounds=0:9999 -g [1000000]i64 --f32-bounds=-7.0:7.0 -g [1000000]f32 --i64-bounds=100:100 -g [10000]i64 --f32-bounds=-10.0:10.0 -g [10000]f32`
+was used to generate the data and then piped to the program with the `-r 10`
+flag to run it 10 times.
+
+The sequential version using the C backend had an average runtime of 1625 ms.
+The flat-parallel version using the CUDA backend had an average runtime of
+363 ms resulting in a speedup of ~4.48.
