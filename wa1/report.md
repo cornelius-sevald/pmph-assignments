@@ -132,30 +132,7 @@ giving a speedup of approx. `8.31`, `8.29` and `6.19` respectively.
 Task 3
 ------
 
-The CUDA program validates and an epsilon of `1e-5`.
-The sweet-point seems to be around `N=400` (on gpu02).
-A table of input sizes and speedups are given below.
-
-| N    | SPDUP |
-|------|-------|
-| 2^9  |     1 |
-| 2^10 |     2 |
-| 2^11 |     7 |
-| 2^12 |    11 |
-| 2^13 |    22 |
-| 2^14 |    43 |
-| 2^15 |    62 |
-| 2^16 |    77 |
-| 2^17 |    98 |
-| 2^18 |   104 |
-| 2^19 |   110 |
-| 2^20 |   117 |
-| 2^21 |   119 |
-| 2^22 |   117 |
-| 2^23 |   122 |
-
-There are drastic increases in speedups between N=2^13 and N=2^17.
-The maximum speedup seems to be a little above 120 which is reached at N=2^23.
+### Implementation
 
 The code of the CUDA kernel is given below:
 ```c
@@ -199,15 +176,42 @@ is copied from the device memory to the host.
 
 The code that computes the grid and block sizes is given below:
 ```c
-unsigned int block_size = 256;
+unsigned int block_size = 1024;
 unsigned int num_blocks = ((N + (block_size - 1)) / block_size);
 ```
-
-The block size is chosen to be 256 as that's what was used in an example in
-the CUDA documentation. From that, the number of blocks is calculated.
+The block size is chosen to be 1024 as that is the maximum number of threads
+per block according to the `deviceQuery` program from the CUDA installation
+on the `gpu02` machine. From that, the number of blocks is calculated.
 As integer division rounds down we need to add `(block_size - 1)` to `N` before
 dividing to make sure that there are enough blocks in cases where `block_size`
 does not divide `N` evenly.
+
+### Validation, Speedup and Sweet-point
+
+The CUDA program validates with an epsilon of `1e-5`.
+The sweet-point seems to be around `N=370`.
+A table of input sizes and speedups are given below.
+
+| N    | SPDUP |
+|------|-------|
+| 2^9  |   1   |
+| 2^10 |   2   |
+| 2^11 |   5   |
+| 2^12 |  11   |
+| 2^13 |  22   |
+| 2^14 |  27   |
+| 2^15 |  46   |
+| 2^16 |  77   |
+| 2^17 |  93   |
+| 2^18 |  95   |
+| 2^19 | 105   |
+| 2^20 | 110   |
+| 2^21 | 114   |
+| 2^22 | 113   |
+| 2^23 | 115   |
+
+There are drastic increases in speedups between N=2^12 and N=2^17.
+The maximum speedup seems to be a around 115 which is reached at N=2^23.
 
 Task 4
 ======
