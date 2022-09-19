@@ -1,0 +1,62 @@
+map (\ p -> let m = len / p
+            let arr = map (+2) ( iota (m-1) )
+             in map (*p) arr
+    ) sqrn_primes
+
+map (\ p -> let m   = len / p
+            let mm1 = m - 1
+            let iot = iota mm1
+            let ts  = replicate mm1 2
+            let ps  = replicate mm1 p
+            let arr = map2 (+) ts iot
+             in map2 (*) ps arr
+    ) sqrn_primes
+
+let ms   = F( map  (\p -> len / p) sqrn_primes )
+    Σ=[p->sqrn_primes, m->ms]
+let mm1s = F( map  (\m -> m - 1) ms )           
+    Σ=[p->sqrn_primes, m->ms, mm1->mm1s]
+let iots = F( map  (\mm1 -> iota mm1) mm1s)     
+    Σ=[p->sqrn_primes, m->ms, mm1->mm1s, iot->iots]
+let tss  = F( map  (\mm1 -> replicate mm1 2) mm1s )
+    Σ=[p->sqrn_primes, m->ms, mm1->mm1s, iot->iots, ts->tss]
+let pss  = F( map2 (\p mm1 -> replicate mm1 p) sqrn_primes mm1s )
+    Σ=[p->sqrn_primes, m->ms, mm1->mm1s, iot->iots, ts->tss, ps->pss]
+let arrs = F( map2 (\ts iot -> map2 (+) ts iot) tss iots )
+    Σ=[p->sqrn_primes, m->ms, mm1->mm1s, iot->iots, ts->tss, ps->pss, arr->arrs]
+ in        F( map2 (\ps arr -> map (*) pss iots) )
+
+let ms   = map  (\p -> len / p) sqrn_primes
+let mm1s = map  (\m -> m - 1) ms
+{
+    let flag = mkFlagArray mm1s 0 mm1s
+    let vals = map (\f -> if f != 0 then 0 else 1) flag
+    let iots = sgmScan_inc (+) 0 flag vals
+}
+{
+    let n = reduce (+) 0 mm1s
+    tss   = replicate n 2
+}
+{
+    let (flag_n, flag_v) = unzip <| mkFlagArray mm1s (0, 0) <| zip mm1s sqrn_primes
+    let pss  = sgmScan_inc (+) 0 flag_n flag_v
+}
+let arrs = map2 map2 (+) tss iots
+ in        map2 map (*) pss arrs)
+
+let mult_lens = map  (\p -> len / p - 1) sqrn_primes
+let flat_size = reduce (+) 0 mult_lens
+let flag = mkFlagArray mult_lens 0 mult_lens
+{
+    let iots_v = map (\f -> if f != 0 then 0 else 1) flag
+    let iots = sgmScan_inc (+) 0 flag iots_v
+}
+{
+    tss   = replicate flat_size 2
+}
+{
+    let pss_v = mkFlagArray mult_lens 0 sqrn_primes
+    let pss   = sgmScan_inc (+) 0 flag pss_v
+}
+let arrs = map2 (+) tss iots
+ in        map2 (*) pss arrs
