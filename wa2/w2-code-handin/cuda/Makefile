@@ -1,9 +1,14 @@
 COMPILER?=nvcc
+TASK2?=true
 OPT_FLAGS?=-O3 -arch=compute_35
 LDFLAGS?=-lOpenCL
 
 TEST_PBB=test-pbb
 TEST_SPMV=test-spmv
+
+ifeq ($(TASK2), true)
+	OPT_FLAGS+=-D TASK2
+endif
 
 .PHONY: clean all run
 

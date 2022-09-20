@@ -435,7 +435,11 @@ copyFromGlb2ShrMem( const uint32_t glb_offs
 ) {
     #pragma unroll
     for(uint32_t i=0; i<CHUNK; i++) {
+#ifdef TASK2
+        uint32_t loc_ind = threadIdx.x + i*blockDim.x;
+#else
         uint32_t loc_ind = threadIdx.x*CHUNK + i;
+#endif
         uint32_t glb_ind = glb_offs + loc_ind;
         T elm = ne;
         if(glb_ind < N) { elm = d_inp[glb_ind]; }
@@ -465,7 +469,11 @@ copyFromShr2GlbMem( const uint32_t glb_offs
 ) {
     #pragma unroll
     for (uint32_t i = 0; i < CHUNK; i++) {
+#ifdef TASK2
+        uint32_t loc_ind = threadIdx.x + i*blockDim.x;
+#else
         uint32_t loc_ind = threadIdx.x * CHUNK + i;
+#endif
         uint32_t glb_ind = glb_offs + loc_ind;
         if (glb_ind < N) {
             T elm = const_cast<const T&>(shmem_red[loc_ind]);
