@@ -1,17 +1,15 @@
 COMPILER?=nvcc
-TASK2?=true
-TASK3?=true
 OPT_FLAGS?=-O3 -arch=compute_35
 LDFLAGS?=-lOpenCL
 
 TEST_PBB=test-pbb
 TEST_SPMV=test-spmv
 
-ifeq ($(TASK2), true)
-	OPT_FLAGS+=-D TASK2
+ifdef TASK1
+	OPT_FLAGS+=-D TASK1
 endif
-ifeq ($(TASK3), true)
-	OPT_FLAGS+=-D TASK3
+ifdef TASK2
+	OPT_FLAGS+=-D TASK2
 endif
 
 .PHONY: clean all run

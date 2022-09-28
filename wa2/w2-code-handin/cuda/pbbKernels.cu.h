@@ -181,7 +181,7 @@ __device__ inline typename OP::RedElTp
 scanIncWarp( volatile typename OP::RedElTp* ptr, const unsigned int idx ) {
     const unsigned int lane = idx & (WARP-1);
 
-#ifdef TASK3
+#ifdef TASK2
     #pragma unroll
     for (int d=0; d<lgWARP; d++) {
         const unsigned int h = 1 << d;
@@ -445,7 +445,7 @@ copyFromGlb2ShrMem( const uint32_t glb_offs
 ) {
     #pragma unroll
     for(uint32_t i=0; i<CHUNK; i++) {
-#ifdef TASK2
+#ifdef TASK1
         uint32_t loc_ind = threadIdx.x + i*blockDim.x;
 #else
         uint32_t loc_ind = threadIdx.x*CHUNK + i;
@@ -479,7 +479,7 @@ copyFromShr2GlbMem( const uint32_t glb_offs
 ) {
     #pragma unroll
     for (uint32_t i = 0; i < CHUNK; i++) {
-#ifdef TASK2
+#ifdef TASK1
         uint32_t loc_ind = threadIdx.x + i*blockDim.x;
 #else
         uint32_t loc_ind = threadIdx.x * CHUNK + i;
