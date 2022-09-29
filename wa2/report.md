@@ -162,3 +162,73 @@ can read `ptr[31]` and write it to `ptr[0]`.
 The bug is fixed by first reading `ptr[idx]` and saving it to a temporary
 variable, then sync all threads, and finally write the  value of the temporary
 variable to `ptr[warpid]`.
+
+Task 5
+------
+
+The code for the kernels is given below:
+
+```cpp
+__global__ void
+replicate0(int tot_size, char* flags_d) {
+    uint32_t gid = blockIdx.x * blockDim.x + threadIdx.x;
+    if(gid < tot_size) {
+        flags_d[gid] = 0;
+    }
+}
+
+__global__ void
+mkFlags(int mat_rows, int* mat_shp_sc_d, char* flags_d) {
+    uint32_t gid = blockIdx.x * blockDim.x + threadIdx.x;
+    if(gid == 0) {
+        flags_d[0] = 1;
+    } else if(gid < mat_rows) {
+        if (mat_shp_sc_d[gid-1] != mat_shp_sc_d[gid]) {
+            flags_d[mat_shp_sc_d[gid-1]] = 1;
+        }
+    }
+}
+
+__global__ void 
+mult_pairs(int* mat_inds, float* mat_vals, float* vct, int tot_size, float* tmp_pairs) {
+    uint32_t gid = blockIdx.x * blockDim.x + threadIdx.x;
+    if (gid < tot_size) {
+        unsigned int i = mat_inds[gid];
+        float v = mat_vals[gid];
+        tmp_pairs[gid] = v * vct[i];
+    }
+}
+
+__global__ void
+select_last_in_sgm(int mat_rows, int* mat_shp_sc_d, float* tmp_scan, float* res_vct_d) {
+    uint32_t gid = blockIdx.x * blockDim.x + threadIdx.x;
+    if(gid == 0) {
+        res_vct_d[0] = tmp_scan[mat_shp_sc_d[gid]-1];
+    } else if(gid < mat_rows) {
+        if (mat_shp_sc_d[gid-1] != mat_shp_sc_d[gid]) {
+            res_vct_d[gid] = tmp_scan[mat_shp_sc_d[gid]-1];
+        } else {
+            res_vct_d[gid] = 0.0;
+        }
+    }
+}
+```
+
+The two lines in `spMV-Mul-main.cu` is show below:
+
+```cpp
+unsigned int num_blocks     = (tot_size+block_size-1)/block_size;
+unsigned int num_blocks_shp = (mat_rows+block_size-1)/block_size;
+```
+
+By adding `block_size-1` before dividing we make sure that there is still enough
+blocks when `tot_size` or `mat_rows` is not divisible by `block_size`.
+
+Below are the times for CPU and GPU in microseconds with 11033 matrix rows, 2076
+vector elements and block size 256:
+
+| CPU   | GPU  |
+|------:|-----:|
+| 12402 | 4363 |
+
+The GPU has a speedup of ~2.84 over the CPU.
