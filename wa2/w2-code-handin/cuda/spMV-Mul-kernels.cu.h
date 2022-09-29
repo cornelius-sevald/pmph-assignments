@@ -7,7 +7,6 @@ replicate0(int tot_size, char* flags_d) {
     if(gid < tot_size) {
         flags_d[gid] = 0;
     }
-    __syncthreads(); // <-- TODO: try to remove and see if works
 }
 
 __global__ void
@@ -20,7 +19,6 @@ mkFlags(int mat_rows, int* mat_shp_sc_d, char* flags_d) {
             flags_d[mat_shp_sc_d[gid-1]] = 1;
         }
     }
-    __syncthreads(); // <-- TODO: try to remove and see if works
 }
 
 __global__ void 
@@ -31,7 +29,6 @@ mult_pairs(int* mat_inds, float* mat_vals, float* vct, int tot_size, float* tmp_
         float v = mat_vals[gid];
         tmp_pairs[gid] = v * vct[i];
     }
-    __syncthreads(); // <-- TODO: try to remove and see if works
 }
 
 __global__ void
@@ -46,8 +43,6 @@ select_last_in_sgm(int mat_rows, int* mat_shp_sc_d, float* tmp_scan, float* res_
             res_vct_d[gid] = 0.0;
         }
     }
-
-    __syncthreads(); // <-- TODO: try to remove and see if works
 }
 
 #endif
