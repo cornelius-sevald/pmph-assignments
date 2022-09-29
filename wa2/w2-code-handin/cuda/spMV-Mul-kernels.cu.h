@@ -3,22 +3,51 @@
 
 __global__ void
 replicate0(int tot_size, char* flags_d) {
-    // ... fill in your implementation here ...
+    uint32_t gid = blockIdx.x * blockDim.x + threadIdx.x;
+    if(gid < tot_size) {
+        flags_d[gid] = 0;
+    }
+    __syncthreads(); // <-- TODO: try to remove and see if works
 }
 
 __global__ void
 mkFlags(int mat_rows, int* mat_shp_sc_d, char* flags_d) {
-    // ... fill in your implementation here ...
+    uint32_t gid = blockIdx.x * blockDim.x + threadIdx.x;
+    if(gid == 0) {
+        flags_d[0] = 1;
+    } else if(gid < mat_rows) {
+        if (mat_shp_sc_d[gid-1] != mat_shp_sc_d[gid]) {
+            flags_d[mat_shp_sc_d[gid-1]] = 1;
+        }
+    }
+    __syncthreads(); // <-- TODO: try to remove and see if works
 }
 
 __global__ void 
 mult_pairs(int* mat_inds, float* mat_vals, float* vct, int tot_size, float* tmp_pairs) {
-    // ... fill in your implementation here ...
+    uint32_t gid = blockIdx.x * blockDim.x + threadIdx.x;
+    if (gid < tot_size) {
+        unsigned int i = mat_inds[gid];
+        float v = mat_vals[gid];
+        tmp_pairs[gid] = v * vct[i];
+    }
+    __syncthreads(); // <-- TODO: try to remove and see if works
 }
 
 __global__ void
 select_last_in_sgm(int mat_rows, int* mat_shp_sc_d, float* tmp_scan, float* res_vct_d) {
-    // ... fill in your implementation here ...
+    uint32_t gid = blockIdx.x * blockDim.x + threadIdx.x;
+    if(gid == 0) {
+        res_vct_d[0] = tmp_scan[mat_shp_sc_d[gid]-1];
+    } else if(gid < mat_rows) {
+        if (mat_shp_sc_d[gid-1] != mat_shp_sc_d[gid]) {
+            res_vct_d[gid] = tmp_scan[mat_shp_sc_d[gid]-1];
+        } else {
+            res_vct_d[gid] = 0.0;
+        }
+    }
+
+    __syncthreads(); // <-- TODO: try to remove and see if works
 }
 
 #endif
