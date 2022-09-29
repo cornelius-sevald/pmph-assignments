@@ -1,7 +1,11 @@
-PROGS=primes-flat primes-naive primes-seq
-SRCS=$(patsubst %,%.fut,$(PROGS))
+BACKEND?=c
 
-BACKEND=c
+PROGS=primes-flat primes-naive 
+# Only consider primes-seq if using C backend
+ifeq ($(BACKEND), c)
+	PROGS+=primes-seq
+endif
+SRCS=$(patsubst %,%.fut,$(PROGS))
 
 all: $(PROGS)
 
