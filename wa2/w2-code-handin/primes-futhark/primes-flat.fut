@@ -63,16 +63,12 @@ let primesFlat (n : i64) : []i64 =
       -- Also note that `not_primes` has flat length equal to `flat_size`
       --  and the shape of `composite` is `mult_lens`. 
       
-      let (flags, pss_v) =
-        let flag_z = mkFlagArray mult_lens (0, 0) (zip mult_lens sq_primes)
-         in unzip flag_z :> ([flat_size]i64, [flat_size]i64)
-      let iots_v = map (\f -> if f != 0 then 0 else 1) flags
-      let iots   = sgmSumI64 flags iots_v
-      let tss    = replicate flat_size 2
-      let pss    = sgmSumI64 flags pss_v
-      let arrs   = map2 (+) tss iots
+      let flags = mkFlagArray mult_lens 0 sq_primes :> [flat_size]i64
+      let iots_v = map (\f -> if f != 0 then 2 else 1) flags
+      let iotsp2 = sgmSumI64 flags iots_v
+      let pss    = sgmSumI64 flags flags
 
-      let not_primes = map2 (*) pss arrs
+      let not_primes = map2 (*) pss iotsp2
 
       -- If not_primes is correctly computed, then the remaining
       -- code is correct and will do the job of computing the prime
