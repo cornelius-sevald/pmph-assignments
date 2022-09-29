@@ -72,3 +72,76 @@ Now, as `loc_ind` increases with a stride of `blockDim.x` i.e. the block size,
 each adjacent thread accesses adjacent memory.
 
 The benchmarks are discussed in the next section.
+
+Task 3
+------
+
+The code for the inclusive warp-level scan is shown below:
+
+```cpp
+sgmScanIncWarp(volatile typename OP::RedElTp* ptr, volatile F* flg, const unsigned int idx) {
+    typedef ValFlg<typename OP::RedElTp> FVTup;
+    const unsigned int lane = idx & (WARP-1);
+
+    // no synchronization needed inside a WARP, i.e., SIMD execution
+    #pragma unroll
+    for(uint32_t i=0; i<lgWARP; i++) {
+        const uint32_t p = (1<<i);
+        if( lane >= p ) {
+            if(flg[idx] == 0) { ptr[idx] = OP::apply(ptr[idx-p], ptr[idx]); }
+            flg[idx] = flg[idx-p] | flg[idx];
+        } // __syncwarp();
+    }
+
+    F f = flg[idx];
+    typename OP::RedElTp v = OP::remVolatile(ptr[idx]);
+    return FVTup( f, v );
+}
+```
+
+The tests that were meaningfully affected were "Optimized Reduce",
+"Scan Inclusive AddI32" and "SgmScan Inclusive AddI32".
+
+The time in microseconds with the different optimizations are shown below.
+An array size of 50003565 was used and with block size 128.
+
+| Optimizations       | Optimized Reduce | Scan Inclusive | SgmScan Inclusive |
+|:--------------------|-----------------:|---------------:|------------------:|
+| none                |            11251 |          13399 |             12528 |
+| `TASK1`             |             8432 |           6441 |              6209 |
+| `TASK2`             |             7186 |          11088 |             12510 |
+| `TASK1` and `TASK2` |             4422 |           3924 |              6207 |
+
+Below are the speedups relative to "none":
+
+| Optimizations       | Optimized Reduce | Scan Inclusive | SgmScan Inclusive |
+|:--------------------|-----------------:|---------------:|------------------:|
+| none                |             1.00 |           1.00 |              1.00 |
+| `TASK1`             |             1.33 |           2.08 |              2.02 |
+| `TASK2`             |             1.57 |           1.21 |              1.00 |
+| `TASK1` and `TASK2` |             2.54 |           3.41 |              2.02 |
+
+As can be seen from the table, the optimizations in task 1 modestly improves the
+runtime of Optimized Reduce and greatly improves both scans. The optimizations
+in task 2 modestly improve Inclusive Scan and to a greater extent Optimized
+Reduce. Together the two optimizations provide even greater speedups.
+
+Below are the same measurements but with half of the elements (i.e. 25001782)
+and same block size of 128.
+
+| Optimizatrions      | Optimized Reduce | Scan Inclusive | SgmScan Inclusive |
+|:--------------------|-----------------:|---------------:|------------------:|
+| none                |             5676 |           6774 |              6261 |
+| `TASK1`             |             4212 |           3192 |              3113 |
+| `TASK2`             |             3627 |           5645 |              6263 |
+| `TASK1` and `TASK2` |             2208 |           1959 |              3111 |
+
+| Optimizatrions      | Optimized Reduce | Scan Inclusive | SgmScan Inclusive |
+|:--------------------|-----------------:|---------------:|------------------:|
+| none                |             1.00 |           1.00 |              1.00 |
+| `TASK1`             |             1.35 |           2.12 |              2.01 |
+| `TASK2`             |             1.56 |           1.20 |              1.00 |
+| `TASK1` and `TASK2` |             2.57 |           3.46 |              2.01 |
+
+The relative speedups are effectively the same which would suggest that the size
+of the array does not impact the speedup of the optimizations.
