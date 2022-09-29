@@ -145,3 +145,20 @@ and same block size of 128.
 
 The relative speedups are effectively the same which would suggest that the size
 of the array does not impact the speedup of the optimizations.
+
+Task 4
+------
+
+The race condition bug appears in the line
+`if (lane == (WARP-1)) { ptr[warpid] = OP::remVolatile(ptr[idx]); }`.
+The reason for the bug
+-- and the reason it only appears with block size of 1024 --
+is because `warpid = idx >> lgWarp` and when `idx = 1023` i.e. the last thread,
+then `warpid = 31` for that thread. The race condition is between thread `31`
+and thread `1023` (for both of which `lane == (WARP-1)`). It may happen that
+thread `1023` reads `ptr[1023]` and writes it to `ptr[31]` before thread `31`
+can read `ptr[31]` and write it to `ptr[0]`.
+
+The bug is fixed by first reading `ptr[idx]` and saving it to a temporary
+variable, then sync all threads, and finally write the  value of the temporary
+variable to `ptr[warpid]`.
