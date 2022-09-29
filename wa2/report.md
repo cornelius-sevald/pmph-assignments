@@ -57,3 +57,18 @@ The flat-parallel version is much slower (~3.3x) than the naive version with the
 C backend, but has speedup of about ~1.44 with the OpenCL backend.
 This is due to the superior depth of the flat-parallel version, now that the
 parallel hardware has substantially reduced the impact of the work cost.
+
+Task 2
+------
+
+The line `uint32_t loc_ind = threadIdx.x * CHUNK + i;` was instead changed to
+`uint32_t loc_ind = threadIdx.x + i*blockDim.x;` in both `copyFromGlb2ShrMem`
+and `copyFromShr2GlbMem`.
+
+Before, in each thread, `loc_ind` would increase with a stride of 1 meaning that
+adjacent threads in the same warp would, in lockstep, access memory `CHUNK`
+bytes apart in each step.
+Now, as `loc_ind` increases with a stride of `blockDim.x` i.e. the block size,
+each adjacent thread accesses adjacent memory.
+
+The benchmarks are discussed in the next section.
