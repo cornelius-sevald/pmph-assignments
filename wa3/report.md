@@ -103,4 +103,60 @@ for (int i = 0; i < N; i++) {
 }
 ```
 
-After the loops, the value that previously corresponded to `A` is now `A[N-1]`.
+Denote each loop containing $S_1$, $S_2$, $S_3$ and $S_4$ by $L_1$, $L_2$, $L_3$
+and $L_4$ respectively. Loop $L_1$ is trivially parallel as it only writes to
+$A$ and all of the writes are to different inices.
+
+For loop $L_2$, consider an iteration $(i_1, k_1)$ that reads from `A[i, k]` and
+an iteration $(i_2, k_2)$ that writes to `A[i, k]` This yields the following two
+equations: $i_1 = i_2$ and $k_1-1 = k_2$ which means that $i_1 = i_2$ and
+$k_1 > k_2$.
+
+For loop $L_3$, with iterations $(i_1, j_1)$ and $(i_2, j_2)$ that reads/writes
+from/to `B` yields the following two equations: $i_1 = i_2$ and $j_1 = j_2+1$
+which means that $i_1 = i_2$ and $j_1 > j_2$.
+
+For loop $L_4$, with iterations $(i_1, j_1)$ and $(i_2, j_2)$ that reads/writes
+from/to `C` yields the following two equations: $i_1 = i_2+1$ and $j_1 = j_2+1$
+which means that $i_1 > i_2$ and $j_1 > j_2$.
+
+In all three cases, assuming iteration $(i_1, j_1)$ (or $(i_1, k_1)$) is the
+sink results in the following direction vectors for the nested loops:
+
+ - $L_2$: `[ =, < ]`
+ - $L_3$: `[ =, < ]`
+ - $L_4$: `[ <, < ]`
+
+From these we can annotate the loops:
+
+```c
+float A[2*M, N];
+
+// parallel
+for (int i = 0; i < N; i++) {
+    A[0, i] = N;
+}
+
+// parallel
+for (int i = 0; i < N; i++) {
+    // sequential
+    for (int k = 1; k < 2*M; k++) {
+        A[k, i] = sqrt(A[k-1, i] * i * k);
+    }
+}
+
+// parallel
+for (int i = 0; i < N; i++) {
+    // sequential
+     for (int j = 0; j < M; j++) {
+        C[i, j+1] = C[i, j] * A[2*j+1, i];
+    }
+}
+
+// sequential
+for (int i = 0; i < N; i++) {
+     for (int j = 0; j < M; j++) {
+        B[i+1, j+1] = B[i, j] * A[2*j, i];  // S4
+    }
+}
+```
