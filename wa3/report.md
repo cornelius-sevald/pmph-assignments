@@ -23,15 +23,15 @@ from `A[k-1]` must necessarily have been produced in the previous iteration. As
 carrying the dependency.
 
 For the second inner loop, in the statement on line 11, assume that iteration
-$(i_1, j_1)$ reads from `B[i, j]` and iteration $(i_2, j_2)$ writes to `B[i,
-j]`. This yields the following two equations: $i_1 = i_2+1$ and $j_1 = j_2+1$
-which means that $i_1 > i_2$ and $j_1 > j_2$. Assuming iteration $(i_1, j_1)$ is
-the sink results in the direction vector `[<, <]`. Doing the same for the
-statement on line 12 yields the following two equations: $i_1 = i_2$ and $j_1 =
-j_2+1$ which means that $i_1 = i_2$ and $j_1 > j_2$. Again assuming iteration
-$(i_1, j_1)$ is the sink results in the direction vector `[=, <]`. As both of
-these are valid direction vectors they are true (RAW) dependencies. Our
-direction matrix is:
+$(i_1, j_1)$ reads from `B[i, j]` and iteration $(i_2, j_2)$ writes to
+`B[i, j]`. This yields the following two equations: $i_1 = i_2+1$ and
+$j_1 = j_2+1$ which means that $i_1 > i_2$ and $j_1 > j_2$. Assuming iteration
+$(i_1, j_1)$ is the sink results in the direction vector `[<, <]`. Doing the
+same for the statement on line 12 yields the following two equations:
+$i_1 = i_2$ and $j_1 = j_2+1$ which means that $i_1 = i_2$ and $j_1 > j_2$.
+Again assuming iteration $(i_1, j_1)$ is the sink results in the direction
+vector `[=, <]`. As both of these are valid direction vectors they are true
+(RAW) dependencies. Our direction matrix is:
 
 $$
     M =
