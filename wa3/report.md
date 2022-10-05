@@ -78,27 +78,27 @@ to preform array expansion on `A` i.e. convert it to a $N \times (2 M)$ matrix.
 The distributed loop is shown below:
 
 ```c
-float A[N][2*M];
+float A[2*M, N];
 
 for (int i = 0; i < N; i++) {
-    A[i][0] = N;                            // S1
+    A[0, i] = N;                            // S1
 }
 
 for (int i = 0; i < N; i++) {
     for (int k = 1; k < 2*M; k++) {
-        A[i][k] = sqrt(A[i][k-1] * i * k);  // S2
+        A[k, i] = sqrt(A[k-1, i] * i * k);  // S2
     }
 }
 
 for (int i = 0; i < N; i++) {
      for (int j = 0; j < M; j++) {
-        C[i, j+1] = C[i, j] * A[i][2*j+1];  // S3
+        C[i, j+1] = C[i, j] * A[2*j+1, i];  // S3
     }
 }
 
 for (int i = 0; i < N; i++) {
      for (int j = 0; j < M; j++) {
-        B[i+1, j+1] = B[i, j] * A[i][2*j];  // S4
+        B[i+1, j+1] = B[i, j] * A[2*j, i];  // S4
     }
 }
 ```
