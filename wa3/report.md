@@ -183,3 +183,49 @@ for (int j = 0; j < M; j++) {
     }
 }
 ```
+
+Task 2
+------
+
+The write to `accum` on line 5 incurs a WAW dependency in the outer loop making
+it not parallel. Additionally, the writes to `tmpA` in the inner loop on line 7
+also incur a WAW dependency making.
+
+To make the outer loop parallel, the WAW dependencies needs to be removed which
+is done by privatizing `accum` and `tmpA`. It is safe to privatize `accum` as
+any read from `accum` (on line 8 and 9) is covered by the write on line 5 in the
+same iteration. It is also safe to privatize `tmpA` as the read on line 8 is
+covered by the write on line 7.  
+Assuming neither `accum` or `tmpA` is read after the outer loop, we can
+privatize them by moving the declarations inside the loop as follows:
+
+\newpage
+
+```c
+float A[N,64];
+float B[N,64];
+for (int i = 0; i < N; i++) {
+    float accum, tmpA;
+    accum = 0;
+    for (int j = 0; j < 64; j++) {
+        tmpA = A[i, j];
+        accum = sqrt(accum) + tmpA*tmpA;
+        B[i,j] = accum;
+    }
+}
+```
+
+The inner loop is not parallel as line 8 incurs a RAW (true) dependency as the
+read of `accum` must have been produced by a write in the previous iteration.
+
+We notice that the (re-written) line `accum = accum + tmpA*tmpA` looks like a
+reduce pattern with associative operator `+`. It is not, however, as the next
+line writes `accum` to an array violating the condition for a reduce pattern.
+That instead implies that the loop can be expressed as a scan and the outer
+parallel loop would then be a map. The futhark code is shown below:
+
+```futhark
+map (\A' -> let AtA = map2 (*) A' A' in scan (+) 0 AtA) A
+```
+
+Of course this version uses nested parallelism and should probably be flattened.
