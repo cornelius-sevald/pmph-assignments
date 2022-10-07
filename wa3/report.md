@@ -27,7 +27,7 @@ the outer loop does not have the possibility of carrying the dependency, as
 opposed to line 11 where `B` is indexed by `i+1` in the write.  
 
 To eliminate the WAW dependency on line 4, `A` can be privatized. The reason
-that it is legal to privatize `A` can be found when looking at where `A` is
+that it is legal to privatize `A` can be found by looking at where `A` is
 accessed. In the first iteration of the first inner loop (of index `k`) the read
 from `A[0]` is covered by the write on line 4. All other reads of `A[k-1]` is
 covered by a write to `A[k]` on the same line. `A` is also accessed on line 11
@@ -143,7 +143,7 @@ containing $S_3$ and $S_4$. This is because none of the direction matrices
 contain a `>` element so interchanging the columns can never result in a `>` as
 the leftmost non-`=` element.  
 Interchanging the first nested loop simply switches which of the inner and outer
-loop parallel and sequential and is therefore pointless.
+loops are parallel and sequential and is therefore pointless.
 Interchanging the second nested loop results in the following direction matrix:
 
 ```
@@ -224,7 +224,7 @@ line writes `accum` to an array violating the condition for a reduce pattern.
 That instead implies that the loop can be expressed as a scan and the outer
 parallel loop would then be a map. The futhark code is shown below:
 
-```futhark
+```haskell
 map (\A' -> let AtA = map2 (*) A' A' in scan (+) 0 AtA) A
 ```
 
@@ -251,7 +251,7 @@ transfProg(float* Atr, float* Btr, unsigned int N) {
 ```
 
 It is very similar to the `origProg` kernel, except that when indexing `Atr` and
-`Btr`, `j` is multiplies by `N` and `gid` is simply added as-is instead of
+`Btr`, `j` is multiplied by `N` and `gid` is simply added as-is instead of
 multiplying `gid` by 64 and adding `j`. This has the effect of traversing `Atr`
 and `Btr` column-wise instead of row-wise in the loop. This means that adjacent
 threads will also access adjacent memory leading to coalesced memory access.
@@ -308,10 +308,10 @@ Both `GPU 02` and `GPU 03` have incredible results with the block+register tiles
 version with `GPU 02` having speedups of ~29.56 and ~83.45 over the block-tiled
 and naive versions respectively. `GPU 04` is much faster with the naive and
 block-tiled kernels but is actually slower with the block+register tiled kernel
-than `GPU 02` which is very surprising. It might in part be because more people
-where using the device at the same time (I checked with the `who` command) but
-that is probably only a small factor.
+than `GPU 02` and `GPU 03` which is very surprising. It might in part be because
+more people where using the device at the same time (I checked with the `who`
+command) but that is probably only a small factor.
 
 By preforming the extra levels of strip-mining on the loops we are able to
-interchange them to out liking and unroll the hot loops that do all of the
+interchange them to our liking and unroll the hot loops that do all of the
 reading and writing to memory which can lead to significant performance gain.
