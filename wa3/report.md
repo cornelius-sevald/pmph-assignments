@@ -315,3 +315,41 @@ command) but that is probably only a small factor.
 By preforming the extra levels of strip-mining on the loops we are able to
 interchange them to our liking and unroll the hot loops that do all of the
 reading and writing to memory which can lead to significant performance gain.
+
+The kernel is shown below:
+
+```cpp
+template <class ElTp, int T> 
+__global__ void matMultRegTiledKer(ElTp* A, ElTp* B, ElTp* C,
+        int heightA, int widthB, int widthA) {
+  __shared__ ElTp Ash[T][T];
+  unsigned int tidy = threadIdx.y;          // thread id y
+  unsigned int tidx = threadIdx.x;          // thread id x
+  unsigned int ii = blockIdx.y * T;         // grid y
+  unsigned int jjj = blockIdx.x * T * T;    // grid x
+  unsigned int jj = jjj + tidy * T;         // block y
+  unsigned int j = jj + tidx;               // block x
+  ElTp accum[T] = {0};
+
+  for(int kk = 0; kk < widthA; kk += T) {
+      #pragma unroll
+      for(int i = 0; i < T; i++) {
+          Ash[tidy][tidx] = (((i+ii) < heightA) && (kk+tidx < widthA)) ?
+              A[(i+ii)*widthA + (kk+tidx)] : 0.0;
+      }
+      __syncthreads();
+      for(int k = 0; k < T; k++) {
+          float b = B[k*widthB + j];
+          #pragma unroll
+          for(int i = 0; i < T; i++) {
+              accum[i] += Ash[i+ii][k] * b;
+          }
+      }
+      __syncthreads();
+  }
+  #pragma unroll
+  for(int i = 0; i < T; i++) {
+      C[(i+ii)*widthB + j] = accum[i];
+  }
+}
+```
