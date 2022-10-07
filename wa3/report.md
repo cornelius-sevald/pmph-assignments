@@ -291,3 +291,27 @@ results in an even greater speedup of ~8.72. Of course, the speedups are not to
 be trusted as the coalesced version does not validate, so any performance gains
 should be taken with a grain of salt until the program actually produces the
 correct result.
+
+Task 4
+------
+
+The `matMultRegTiledKer` kernel does validate. The benchmarks on the different
+GPUs are shown below in GFlops/s:
+
+| GPU # |   Naive | Block-Tiled | Block+Register Tiled |
+|-------|--------:|------------:|---------------------:|
+| `02`  |  152.73 |      431.14 |             12744.71 |
+| `03`  |  152.86 |      431.39 |              9862.15 |
+| `04`  | 1138.19 |     1493.12 |              1389.51 |
+
+Both `GPU 02` and `GPU 03` have incredible results with the block+register tiles
+version with `GPU 02` having speedups of ~29.56 and ~83.45 over the block-tiled
+and naive versions respectively. `GPU 04` is much faster with the naive and
+block-tiled kernels but is actually slower with the block+register tiled kernel
+than `GPU 02` which is very surprising. It might in part be because more people
+where using the device at the same time (I checked with the `who` command) but
+that is probably only a small factor.
+
+By preforming the extra levels of strip-mining on the loops we are able to
+interchange them to out liking and unroll the hot loops that do all of the
+reading and writing to memory which can lead to significant performance gain.
