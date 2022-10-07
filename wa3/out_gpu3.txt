@@ -1,0 +1,27 @@
+nvcc -O3 -arch=compute_35 -o assignm3-task3 transpose-main.cu
+nvcc -O3 -arch=compute_35 -o assignm3-task4 mmm-main.cu
+./assignm3-task3
+Naive Memcpy GPU Kernel runs in: 2069 microsecs, GB/sec: 259.48
+
+
+Transpose on GPU runs in: 2739 microsecs, GB/sec: 196.009835
+GPU TRANSPOSITION   VALID!
+Original Program runs on GPU in: 45908 microsecs, GB/sec: 11.694496
+GPU PROGRAM   VALID!
+Coalesced Program with manifested transposition runs on GPU in: 7480 microsecs, GB/sec: 71.774193
+Row 0 column: 1, seq: 0.400942, par: 0.011794
+GPU PROGRAM INVALID!
+Optimized Program runs on GPU in: 3259 microsecs, GB/sec: 164.734863
+Row 0 column: 0, seq: 0.151436, par: inf
+GPU PROGRAM INVALID!
+./assignm3-task4
+Sequential Naive version runs in: 2265960 microsecs
+GPU Naive MMM version ... VALID RESULT!
+GPU Naive MMM version runs in: 56194 microsecs
+GPU Naive MMM Performance= 152.86 GFlop/s, Time= 56194.000 microsec 256 64
+GPU Block-Tiled MMM version ... VALID RESULT!
+GPU Block-Tiled MMM version runs in: 19912 microsecs
+GPU Block-Tiled MMM Performance= 431.39 GFlop/s, Time= 19912.000 microsec 256 64
+GPU Block+Register Tiled MMM version ... VALID RESULT!
+GPU Block+Register Tiled MMM version runs in: 871 microsecs
+GPU Block+Register Tiled MMM Performance= 9862.15 GFlop/s, Time= 871.000 microsec 256 64
