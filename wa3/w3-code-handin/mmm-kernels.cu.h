@@ -69,8 +69,33 @@ __global__ void matMultCacheKer(ElTp* A, ElTp* B, ElTp* C, int heightA, int widt
 
 template <class ElTp, int T> 
 __global__ void matMultRegTiledKer(ElTp* A, ElTp* B, ElTp* C, int heightA, int widthB, int widthA) {
-    // ToDo: fill in the kernel implementation of register+block tiled 
-    //       matrix-matrix multiplication here
+  __shared__ ElTp Ash[T][T];
+  unsigned int tidy = threadIdx.y;          // thread id y
+  unsigned int tidx = threadIdx.x;          // thread id x
+  unsigned int ii = blockIdx.y * T;         // grid y
+  unsigned int jjj = blockIdx.x * T * T;    // grid x
+  unsigned int jj = jjj + tidy * T;         // block y
+  unsigned int j = jj + tidx;               // block x
+  ElTp accum[T] = {0};
+
+  for(int kk = 0; kk < widthA; kk += T) {
+//      #pragma unroll
+      for(int i = ii; i < ii+T; i++) {
+          Ash[tidy][tidx] = ((i < heightA) && (kk+tidx < widthA)) ?
+              A[i*widthA + (kk+tidx)] : 0.0;
+      }
+      __syncthreads();
+      for(int k = 0; k < T; k++) {
+          float b = B[k*widthB + j];
+          for(int i = ii; i < ii+T; i++) {
+              accum[i-ii] += Ash[i][k] * b;
+          }
+      }
+      __syncthreads();
+  }
+  for(int i = ii; i < ii+T; i++) {
+      C[i*widthB + j] = accum[i-ii];
+  }
 }
 
 
