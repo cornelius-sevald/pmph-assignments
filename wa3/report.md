@@ -229,3 +229,65 @@ map (\A' -> let AtA = map2 (*) A' A' in scan (+) 0 AtA) A
 ```
 
 Of course this version uses nested parallelism and should probably be flattened.
+
+Task 3
+------
+
+The kernel `transfProg` is shown below:
+
+```cpp
+__global__ void 
+transfProg(float* Atr, float* Btr, unsigned int N) {
+    unsigned int gid = (blockIdx.x * blockDim.x + threadIdx.x);
+    if(gid >= N) return;
+    float accum = 0.0;
+
+    for(int j=0; j<64; j++) {
+        float tmpA  = Atr[j*N + gid];
+        accum = sqrt(accum) + tmpA*tmpA;
+        Btr[j*N + gid]  = accum;
+    }
+}
+```
+
+It is very similar to the `origProg` kernel, except that when indexing `Atr` and
+`Btr`, `j` is multiplies by `N` and `gid` is simply added as-is instead of
+multiplying `gid` by 64 and adding `j`. This has the effect of traversing `Atr`
+and `Btr` column-wise instead of row-wise in the loop. This means that adjacent
+threads will also access adjacent memory leading to coalesced memory access.
+
+The CPU orchestration is shown below:
+
+```cpp
+transposeTiled<float, TILE>(d_A, d_Atr, HEIGHT_A, WIDTH_A);
+transfProg<<< num_blocks, block >>>(d_Atr, d_Btr, num_thds);
+transposeTiled<float, TILE>(d_Btr, d_B, WIDTH_A, HEIGHT_A);
+```
+
+It transposes `d_A` and stores it in `d_Atr`, runs the `transfProg` kernel with
+`d_Atr` as input and `d_Btr` as output and finally re-transposes `d_Btr` and
+stores it in `d_B` which is the final output. Notice also how the width and
+height parameters are switched in the second transposition, even though it does
+not matter in this case as they are equal.
+
+Sadly, the program does not validate and I have no idea why. It reports:
+"`Row 0 column: 1, seq: 0.400942, par: 0.011794`". Strangely, if you use the
+`origProg` kernel instead of `transfProg` on line 192 (while keeping the
+transpositions) you get the same error. You also get the same error if you use
+the `transfProg` kernel but forgo the transpositions (and remember to pass `d_A`
+and `d_B` directly). Anyway, I digress.
+
+The benchmarks on the different GPUs are shown below in GB/s:
+
+| GPU # | `memcpy` | Original | Coalesced |
+|-------|---------:|---------:|----------:|
+| `02`  |   259.36 |    11.63 | 71.70     |
+| `03`  |   259.48 |    11.69 | 71.77     |
+| `04`  |   540.66 |    16.06 | 140.00    |
+
+As expected, both `GPU 02` and `GPU 03` have similar results with the coalesced
+version having speedups of ~6.16 w.r.t. the original. `GPU 04` is faster and
+results in an even greater speedup of ~8.72. Of course, the speedups are not to
+be trusted as the coalesced version does not validate, so any performance gains
+should be taken with a grain of salt until the program actually produces the
+correct result.
